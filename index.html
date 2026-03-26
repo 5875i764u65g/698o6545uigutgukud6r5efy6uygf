@@ -1,0 +1,326 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  PhoneCall, 
+  Users, 
+  Settings, 
+  Play, 
+  Square, 
+  Save,
+  CheckCircle2,
+  XCircle,
+  Volume2,
+  Smartphone
+} from 'lucide-react';
+
+export default function MobileAutoDialer() {
+  const [activeTab, setActiveTab] = useState('campaign'); // campaign, live, leads
+  
+  // Campaign State
+  const [scriptText, setScriptText] = useState("Namaskar! Humari company aapke business ko grow karne mein madad karti hai. Agar aap interested hain aur humari team se baat karna chahte hain, toh kripya 1 dabayein.");
+  const [contactInput, setContactInput] = useState("9876543210\n9123456780\n9988776655\n9898989898");
+  const [contactList, setContactList] = useState([]);
+  
+  // Dialer State
+  const [isDialing, setIsDialing] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [callStatus, setCallStatus] = useState(''); // ringing, playing, waiting, saved, cut
+  const [interestedLeads, setInterestedLeads] = useState([]);
+
+  // Timer reference for simulation
+  const timerRef = useRef(null);
+
+  // Parse contacts on start
+  const startCampaign = () => {
+    const numbers = contactInput.split('\n').map(n => n.trim()).filter(n => n.length > 5);
+    if (numbers.length === 0) {
+      alert("Pehle contact numbers dalein!");
+      return;
+    }
+    setContactList(numbers);
+    setCurrentIndex(0);
+    setIsDialing(true);
+    setActiveTab('live');
+    runCallCycle(0, numbers);
+  };
+
+  const stopCampaign = () => {
+    setIsDialing(false);
+    clearTimeout(timerRef.current);
+    setCallStatus('Campaign Stopped');
+  };
+
+  // Main Call Loop Simulation
+  const runCallCycle = (index, numbers) => {
+    if (index >= numbers.length || !isDialing) {
+      setIsDialing(false);
+      setCallStatus('Sabhi calls poore ho gaye!');
+      return;
+    }
+
+    const currentNumber = numbers[index];
+    
+    // Step 1: Call lag rahi hai
+    setCallStatus(`Calling ${currentNumber}...`);
+    
+    timerRef.current = setTimeout(() => {
+      if (!isDialing) return;
+      
+      // Step 2: Call uth gayi, script chal rahi hai (30 sec ki jagah 3 sec for demo)
+      setCallStatus(`Playing Script (30 sec)...`);
+      
+      timerRef.current = setTimeout(() => {
+        if (!isDialing) return;
+        
+        // Step 3: Wait for user input (5 seconds)
+        setCallStatus(`Waiting for input (1)...`);
+        
+        timerRef.current = setTimeout(() => {
+          if (!isDialing) return;
+          
+          // Randomly simulate if user pressed 1 or not (30% chance)
+          const pressedOne = Math.random() > 0.7; 
+          
+          if (pressedOne) {
+            setCallStatus(`User ne 1 dabaya! Data saved.`);
+            setInterestedLeads(prev => [...prev, { phone: currentNumber, time: new Date().toLocaleTimeString() }]);
+          } else {
+            setCallStatus(`No input. Call cut.`);
+          }
+          
+          // Next call ki taraf badhein (2 sec break ke baad)
+          timerRef.current = setTimeout(() => {
+            if (!isDialing) return;
+            setCurrentIndex(index + 1);
+            runCallCycle(index + 1, numbers);
+          }, 2000);
+
+        }, 2000); // Wait time for button press
+      }, 3000); // Script playing time
+    }, 2000); // Ringing time
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => clearTimeout(timerRef.current);
+  }, []);
+
+  return (
+    <div className="flex justify-center items-center h-screen bg-gray-100 font-sans">
+      {/* Mobile View Container */}
+      <div className="w-full max-w-md h-full sm:h-[850px] bg-white sm:rounded-3xl sm:shadow-2xl flex flex-col overflow-hidden relative sm:border-8 border-gray-900">
+        
+        {/* Top Status Bar (Fake Mobile UI) */}
+        <div className="bg-gray-900 text-white px-4 py-2 flex justify-between items-center text-xs">
+          <span>10:30 AM</span>
+          <div className="flex space-x-2">
+            <Smartphone size={14} />
+          </div>
+        </div>
+
+        {/* Header */}
+        <header className="bg-blue-600 text-white p-4 shadow-md">
+          <h1 className="text-xl font-bold text-center">Auto Call & Press-1</h1>
+          <p className="text-center text-blue-200 text-xs">Aapke SIM se automated calls</p>
+        </header>
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          
+          {/* CAMPAIGN TAB */}
+          {activeTab === 'campaign' && (
+            <div className="p-5 space-y-6">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                  <Volume2 size={16} className="mr-2 text-blue-500"/> Script (Jo call uthne par bajegi)
+                </label>
+                <textarea 
+                  value={scriptText}
+                  onChange={(e) => setScriptText(e.target.value)}
+                  className="w-full h-24 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Apni audio script yahan likhein..."
+                />
+                <p className="text-xs text-gray-500 mt-2">Call cut hone se pehle user se '1' dabane ko kahein.</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                  <Users size={16} className="mr-2 text-blue-500"/> Contact Numbers List
+                </label>
+                <textarea 
+                  value={contactInput}
+                  onChange={(e) => setContactInput(e.target.value)}
+                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                  placeholder="Ek line mein ek number dalein..."
+                />
+                <p className="text-xs text-gray-500 mt-2">Yeh system ek ke baad ek inn numbers par call karega.</p>
+              </div>
+
+              <button 
+                onClick={startCampaign}
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 flex justify-center items-center text-lg transition-transform active:scale-95"
+              >
+                <Play size={24} className="mr-2" /> Start Calling Campaign
+              </button>
+            </div>
+          )}
+
+          {/* LIVE CALL TAB */}
+          {activeTab === 'live' && (
+            <div className="p-5 flex flex-col items-center justify-center h-full">
+              
+              <div className="w-48 h-48 rounded-full flex items-center justify-center mb-8 relative">
+                {isDialing ? (
+                  <>
+                    <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-70"></div>
+                    <div className="absolute inset-4 bg-blue-200 rounded-full animate-pulse"></div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 bg-gray-100 rounded-full"></div>
+                )}
+                <div className="relative z-10 bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center text-white shadow-xl">
+                  <PhoneCall size={40} className={isDialing ? 'animate-bounce' : ''} />
+                </div>
+              </div>
+
+              <div className="text-center w-full px-4">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  {isDialing ? contactList[currentIndex] : 'Campaign Finished'}
+                </h2>
+                
+                <div className="h-16 flex items-center justify-center">
+                  <p className={`text-sm font-medium px-4 py-2 rounded-full ${
+                    callStatus.includes('User ne 1 dabaya') ? 'bg-green-100 text-green-700' : 
+                    callStatus.includes('Playing') ? 'bg-blue-100 text-blue-700' : 
+                    callStatus.includes('cut') ? 'bg-red-100 text-red-700' : 
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {callStatus || 'Ready to dial...'}
+                  </p>
+                </div>
+
+                {isDialing && (
+                  <div className="mt-4">
+                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2">Progress</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${(currentIndex / contactList.length) * 100}%` }}></div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{currentIndex} / {contactList.length} Calls</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-auto pt-8 w-full">
+                {isDialing ? (
+                  <button 
+                    onClick={stopCampaign}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center text-lg active:scale-95 transition-transform"
+                  >
+                    <Square size={20} className="mr-2" /> Stop Campaign
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setActiveTab('campaign')}
+                    className="w-full bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center text-lg active:scale-95 transition-transform"
+                  >
+                    Back to Setup
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* LEADS TAB */}
+          {activeTab === 'leads' && (
+            <div className="p-5 h-full flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Interested Leads</h2>
+                <span className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-sm">
+                  {interestedLeads.length} Total
+                </span>
+              </div>
+
+              {interestedLeads.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                  <Users size={48} className="mb-4 opacity-20" />
+                  <p>Koi naya lead nahi hai.</p>
+                  <p className="text-xs text-center mt-2">Campaign chalayein, jo log '1' dabayenge unki list yahan aayegi.</p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto space-y-3">
+                  {interestedLeads.map((lead, idx) => (
+                    <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-green-100 flex justify-between items-center">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-green-500 rounded-full p-2">
+                          <CheckCircle2 size={16} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">{lead.phone}</p>
+                          <p className="text-xs text-gray-500">Pressed '1' at {lead.time}</p>
+                        </div>
+                      </div>
+                      <button className="text-blue-600 hover:bg-blue-50 p-2 rounded-full">
+                        <PhoneCall size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {interestedLeads.length > 0 && (
+                <button className="mt-4 w-full bg-blue-50 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 flex justify-center items-center active:scale-95 transition-transform">
+                  <Save size={18} className="mr-2" /> Export to Excel
+                </button>
+              )}
+            </div>
+          )}
+
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="bg-white border-t border-gray-200 flex justify-around p-3 pb-6 sm:pb-3">
+          <NavBtn 
+            icon={<Settings size={20} />} 
+            label="Setup" 
+            active={activeTab === 'campaign'} 
+            onClick={() => !isDialing && setActiveTab('campaign')}
+            disabled={isDialing}
+          />
+          <NavBtn 
+            icon={<PhoneCall size={20} />} 
+            label="Live Dial" 
+            active={activeTab === 'live'} 
+            onClick={() => setActiveTab('live')}
+          />
+          <NavBtn 
+            icon={<Users size={20} />} 
+            label="Leads" 
+            active={activeTab === 'leads'} 
+            onClick={() => !isDialing && setActiveTab('leads')}
+            disabled={isDialing}
+            badge={interestedLeads.length > 0 ? interestedLeads.length : null}
+          />
+        </div>
+
+      </div>
+    </div>
+  );
+
+  // Helper Component for Bottom Nav
+  function NavBtn({ icon, label, active, onClick, disabled, badge }) {
+    return (
+      <button 
+        onClick={onClick} 
+        disabled={disabled}
+        className={`flex flex-col items-center p-2 relative ${active ? 'text-blue-600' : 'text-gray-400'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        <div className="mb-1">{icon}</div>
+        <span className="text-[10px] font-semibold">{label}</span>
+        {badge && (
+          <span className="absolute top-0 right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+      </button>
+    );
+  }
+}
