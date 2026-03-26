@@ -1,326 +1,381 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  PhoneCall, 
-  Users, 
-  Settings, 
-  Play, 
-  Square, 
-  Save,
-  CheckCircle2,
-  XCircle,
-  Volume2,
-  Smartphone
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Call & Press-1</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom Animations */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .dialing-animation {
+            animation: pulse-ring 2s infinite;
+        }
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans flex justify-center items-center h-screen m-0">
 
-export default function MobileAutoDialer() {
-  const [activeTab, setActiveTab] = useState('campaign'); // campaign, live, leads
-  
-  // Campaign State
-  const [scriptText, setScriptText] = useState("Namaskar! Humari company aapke business ko grow karne mein madad karti hai. Agar aap interested hain aur humari team se baat karna chahte hain, toh kripya 1 dabayein.");
-  const [contactInput, setContactInput] = useState("9876543210\n9123456780\n9988776655\n9898989898");
-  const [contactList, setContactList] = useState([]);
-  
-  // Dialer State
-  const [isDialing, setIsDialing] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [callStatus, setCallStatus] = useState(''); // ringing, playing, waiting, saved, cut
-  const [interestedLeads, setInterestedLeads] = useState([]);
-
-  // Timer reference for simulation
-  const timerRef = useRef(null);
-
-  // Parse contacts on start
-  const startCampaign = () => {
-    const numbers = contactInput.split('\n').map(n => n.trim()).filter(n => n.length > 5);
-    if (numbers.length === 0) {
-      alert("Pehle contact numbers dalein!");
-      return;
-    }
-    setContactList(numbers);
-    setCurrentIndex(0);
-    setIsDialing(true);
-    setActiveTab('live');
-    runCallCycle(0, numbers);
-  };
-
-  const stopCampaign = () => {
-    setIsDialing(false);
-    clearTimeout(timerRef.current);
-    setCallStatus('Campaign Stopped');
-  };
-
-  // Main Call Loop Simulation
-  const runCallCycle = (index, numbers) => {
-    if (index >= numbers.length || !isDialing) {
-      setIsDialing(false);
-      setCallStatus('Sabhi calls poore ho gaye!');
-      return;
-    }
-
-    const currentNumber = numbers[index];
-    
-    // Step 1: Call lag rahi hai
-    setCallStatus(`Calling ${currentNumber}...`);
-    
-    timerRef.current = setTimeout(() => {
-      if (!isDialing) return;
-      
-      // Step 2: Call uth gayi, script chal rahi hai (30 sec ki jagah 3 sec for demo)
-      setCallStatus(`Playing Script (30 sec)...`);
-      
-      timerRef.current = setTimeout(() => {
-        if (!isDialing) return;
+    <!-- Mobile View Container -->
+    <div class="w-full max-w-md h-full sm:h-[850px] bg-white sm:rounded-3xl sm:shadow-2xl flex flex-col overflow-hidden relative sm:border-8 border-gray-900">
         
-        // Step 3: Wait for user input (5 seconds)
-        setCallStatus(`Waiting for input (1)...`);
-        
-        timerRef.current = setTimeout(() => {
-          if (!isDialing) return;
-          
-          // Randomly simulate if user pressed 1 or not (30% chance)
-          const pressedOne = Math.random() > 0.7; 
-          
-          if (pressedOne) {
-            setCallStatus(`User ne 1 dabaya! Data saved.`);
-            setInterestedLeads(prev => [...prev, { phone: currentNumber, time: new Date().toLocaleTimeString() }]);
-          } else {
-            setCallStatus(`No input. Call cut.`);
-          }
-          
-          // Next call ki taraf badhein (2 sec break ke baad)
-          timerRef.current = setTimeout(() => {
-            if (!isDialing) return;
-            setCurrentIndex(index + 1);
-            runCallCycle(index + 1, numbers);
-          }, 2000);
-
-        }, 2000); // Wait time for button press
-      }, 3000); // Script playing time
-    }, 2000); // Ringing time
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => clearTimeout(timerRef.current);
-  }, []);
-
-  return (
-    <div className="flex justify-center items-center h-screen bg-gray-100 font-sans">
-      {/* Mobile View Container */}
-      <div className="w-full max-w-md h-full sm:h-[850px] bg-white sm:rounded-3xl sm:shadow-2xl flex flex-col overflow-hidden relative sm:border-8 border-gray-900">
-        
-        {/* Top Status Bar (Fake Mobile UI) */}
-        <div className="bg-gray-900 text-white px-4 py-2 flex justify-between items-center text-xs">
-          <span>10:30 AM</span>
-          <div className="flex space-x-2">
-            <Smartphone size={14} />
-          </div>
+        <!-- Top Status Bar (Fake Mobile UI) -->
+        <div class="bg-gray-900 text-white px-4 py-2 flex justify-between items-center text-xs">
+            <span id="clock">10:30 AM</span>
+            <div class="flex space-x-2">
+                <i class="fa-solid fa-signal"></i>
+                <i class="fa-solid fa-wifi"></i>
+                <i class="fa-solid fa-battery-full"></i>
+            </div>
         </div>
 
-        {/* Header */}
-        <header className="bg-blue-600 text-white p-4 shadow-md">
-          <h1 className="text-xl font-bold text-center">Auto Call & Press-1</h1>
-          <p className="text-center text-blue-200 text-xs">Aapke SIM se automated calls</p>
+        <!-- Header -->
+        <header class="bg-blue-600 text-white p-4 shadow-md">
+            <h1 class="text-xl font-bold text-center">Auto Call & Press-1</h1>
+            <p class="text-center text-blue-200 text-xs">Aapke SIM se automated calls</p>
         </header>
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
-          
-          {/* CAMPAIGN TAB */}
-          {activeTab === 'campaign' && (
-            <div className="p-5 space-y-6">
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                  <Volume2 size={16} className="mr-2 text-blue-500"/> Script (Jo call uthne par bajegi)
-                </label>
-                <textarea 
-                  value={scriptText}
-                  onChange={(e) => setScriptText(e.target.value)}
-                  className="w-full h-24 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="Apni audio script yahan likhein..."
-                />
-                <p className="text-xs text-gray-500 mt-2">Call cut hone se pehle user se '1' dabane ko kahein.</p>
-              </div>
-
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                  <Users size={16} className="mr-2 text-blue-500"/> Contact Numbers List
-                </label>
-                <textarea 
-                  value={contactInput}
-                  onChange={(e) => setContactInput(e.target.value)}
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono"
-                  placeholder="Ek line mein ek number dalein..."
-                />
-                <p className="text-xs text-gray-500 mt-2">Yeh system ek ke baad ek inn numbers par call karega.</p>
-              </div>
-
-              <button 
-                onClick={startCampaign}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 flex justify-center items-center text-lg transition-transform active:scale-95"
-              >
-                <Play size={24} className="mr-2" /> Start Calling Campaign
-              </button>
-            </div>
-          )}
-
-          {/* LIVE CALL TAB */}
-          {activeTab === 'live' && (
-            <div className="p-5 flex flex-col items-center justify-center h-full">
-              
-              <div className="w-48 h-48 rounded-full flex items-center justify-center mb-8 relative">
-                {isDialing ? (
-                  <>
-                    <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-70"></div>
-                    <div className="absolute inset-4 bg-blue-200 rounded-full animate-pulse"></div>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 bg-gray-100 rounded-full"></div>
-                )}
-                <div className="relative z-10 bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center text-white shadow-xl">
-                  <PhoneCall size={40} className={isDialing ? 'animate-bounce' : ''} />
-                </div>
-              </div>
-
-              <div className="text-center w-full px-4">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  {isDialing ? contactList[currentIndex] : 'Campaign Finished'}
-                </h2>
-                
-                <div className="h-16 flex items-center justify-center">
-                  <p className={`text-sm font-medium px-4 py-2 rounded-full ${
-                    callStatus.includes('User ne 1 dabaya') ? 'bg-green-100 text-green-700' : 
-                    callStatus.includes('Playing') ? 'bg-blue-100 text-blue-700' : 
-                    callStatus.includes('cut') ? 'bg-red-100 text-red-700' : 
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {callStatus || 'Ready to dial...'}
-                  </p>
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto bg-gray-50 relative" id="main-content">
+            
+            <!-- CAMPAIGN TAB -->
+            <div id="tab-campaign" class="p-5 space-y-6 block">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <i class="fa-solid fa-volume-high mr-2 text-blue-500"></i> Script (Jo call uthne par bajegi)
+                    </label>
+                    <textarea 
+                        id="scriptInput"
+                        class="w-full h-24 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Apni audio script yahan likhein..."
+                    >Namaskar! Humari company aapke business ko grow karne mein madad karti hai. Agar aap interested hain aur humari team se baat karna chahte hain, toh kripya 1 dabayein.</textarea>
+                    <p class="text-xs text-gray-500 mt-2">Call cut hone se pehle user se '1' dabane ko kahein.</p>
                 </div>
 
-                {isDialing && (
-                  <div className="mt-4">
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2">Progress</p>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${(currentIndex / contactList.length) * 100}%` }}></div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">{currentIndex} / {contactList.length} Calls</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-auto pt-8 w-full">
-                {isDialing ? (
-                  <button 
-                    onClick={stopCampaign}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center text-lg active:scale-95 transition-transform"
-                  >
-                    <Square size={20} className="mr-2" /> Stop Campaign
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => setActiveTab('campaign')}
-                    className="w-full bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center text-lg active:scale-95 transition-transform"
-                  >
-                    Back to Setup
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* LEADS TAB */}
-          {activeTab === 'leads' && (
-            <div className="p-5 h-full flex flex-col">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Interested Leads</h2>
-                <span className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-sm">
-                  {interestedLeads.length} Total
-                </span>
-              </div>
-
-              {interestedLeads.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                  <Users size={48} className="mb-4 opacity-20" />
-                  <p>Koi naya lead nahi hai.</p>
-                  <p className="text-xs text-center mt-2">Campaign chalayein, jo log '1' dabayenge unki list yahan aayegi.</p>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <i class="fa-solid fa-users mr-2 text-blue-500"></i> Contact Numbers List
+                    </label>
+                    <textarea 
+                        id="contactInput"
+                        class="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                        placeholder="Ek line mein ek number dalein..."
+                    >9876543210&#10;9123456780&#10;9988776655&#10;9898989898</textarea>
+                    <p class="text-xs text-gray-500 mt-2">Yeh system ek ke baad ek inn numbers par call karega.</p>
                 </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto space-y-3">
-                  {interestedLeads.map((lead, idx) => (
-                    <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-green-100 flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-green-500 rounded-full p-2">
-                          <CheckCircle2 size={16} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-800">{lead.phone}</p>
-                          <p className="text-xs text-gray-500">Pressed '1' at {lead.time}</p>
-                        </div>
-                      </div>
-                      <button className="text-blue-600 hover:bg-blue-50 p-2 rounded-full">
-                        <PhoneCall size={18} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
 
-              {interestedLeads.length > 0 && (
-                <button className="mt-4 w-full bg-blue-50 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 flex justify-center items-center active:scale-95 transition-transform">
-                  <Save size={18} className="mr-2" /> Export to Excel
+                <button 
+                    onclick="startCampaign()"
+                    class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 flex justify-center items-center text-lg transition-transform active:scale-95"
+                >
+                    <i class="fa-solid fa-play mr-2"></i> Start Calling Campaign
                 </button>
-              )}
             </div>
-          )}
+
+            <!-- LIVE CALL TAB -->
+            <div id="tab-live" class="p-5 flex-col items-center justify-center h-full hidden">
+                
+                <div class="w-48 h-48 rounded-full flex items-center justify-center mb-8 relative mx-auto mt-10">
+                    <div id="dialing-ring" class="absolute inset-0 bg-gray-100 rounded-full"></div>
+                    <div class="relative z-10 bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center text-white shadow-xl">
+                        <i id="phone-icon" class="fa-solid fa-phone-volume text-4xl"></i>
+                    </div>
+                </div>
+
+                <div class="text-center w-full px-4">
+                    <h2 id="current-number-display" class="text-2xl font-bold text-gray-800 mb-2">
+                        Campaign Finished
+                    </h2>
+                    
+                    <div class="h-16 flex items-center justify-center">
+                        <p id="call-status-badge" class="text-sm font-medium px-4 py-2 rounded-full bg-gray-100 text-gray-600 transition-colors duration-300">
+                            Ready to dial...
+                        </p>
+                    </div>
+
+                    <div id="progress-container" class="mt-4 hidden">
+                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2">Progress</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <p id="progress-text" class="text-xs text-gray-500 mt-1">0 / 0 Calls</p>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-16 w-full pb-8">
+                    <button 
+                        id="stop-btn"
+                        onclick="stopCampaign()"
+                        class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center text-lg active:scale-95 transition-transform hidden"
+                    >
+                        <i class="fa-solid fa-stop mr-2"></i> Stop Campaign
+                    </button>
+                    <button 
+                        id="back-setup-btn"
+                        onclick="switchTab('campaign')"
+                        class="w-full bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center text-lg active:scale-95 transition-transform"
+                    >
+                        Back to Setup
+                    </button>
+                </div>
+            </div>
+
+            <!-- LEADS TAB -->
+            <div id="tab-leads" class="p-5 h-full flex-col hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Interested Leads</h2>
+                    <span id="lead-count-badge" class="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-sm">
+                        0 Total
+                    </span>
+                </div>
+
+                <div id="empty-leads" class="flex-1 flex flex-col items-center justify-center text-gray-400 h-64">
+                    <i class="fa-solid fa-users text-5xl mb-4 opacity-20"></i>
+                    <p>Koi naya lead nahi hai.</p>
+                    <p class="text-xs text-center mt-2 px-4">Campaign chalayein, jo log '1' dabayenge unki list yahan aayegi.</p>
+                </div>
+
+                <div id="leads-list" class="flex-1 overflow-y-auto space-y-3 hidden">
+                    <!-- Leads will be injected here by JS -->
+                </div>
+
+                <button id="export-btn" class="mt-8 w-full bg-blue-50 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 justify-center items-center active:scale-95 transition-transform hidden flex">
+                    <i class="fa-solid fa-file-arrow-down mr-2"></i> Export to Excel
+                </button>
+            </div>
 
         </div>
 
-        {/* Bottom Navigation */}
-        <div className="bg-white border-t border-gray-200 flex justify-around p-3 pb-6 sm:pb-3">
-          <NavBtn 
-            icon={<Settings size={20} />} 
-            label="Setup" 
-            active={activeTab === 'campaign'} 
-            onClick={() => !isDialing && setActiveTab('campaign')}
-            disabled={isDialing}
-          />
-          <NavBtn 
-            icon={<PhoneCall size={20} />} 
-            label="Live Dial" 
-            active={activeTab === 'live'} 
-            onClick={() => setActiveTab('live')}
-          />
-          <NavBtn 
-            icon={<Users size={20} />} 
-            label="Leads" 
-            active={activeTab === 'leads'} 
-            onClick={() => !isDialing && setActiveTab('leads')}
-            disabled={isDialing}
-            badge={interestedLeads.length > 0 ? interestedLeads.length : null}
-          />
+        <!-- Bottom Navigation -->
+        <div class="bg-white border-t border-gray-200 flex justify-around p-3 pb-6 sm:pb-3">
+            <button id="nav-campaign" onclick="switchTab('campaign')" class="flex flex-col items-center p-2 text-blue-600 transition-colors">
+                <i class="fa-solid fa-gear text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Setup</span>
+            </button>
+            <button id="nav-live" onclick="switchTab('live')" class="flex flex-col items-center p-2 text-gray-400 transition-colors">
+                <i class="fa-solid fa-phone text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Live Dial</span>
+            </button>
+            <button id="nav-leads" onclick="switchTab('leads')" class="flex flex-col items-center p-2 text-gray-400 relative transition-colors">
+                <i class="fa-solid fa-users text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Leads</span>
+                <span id="nav-lead-badge" class="absolute top-0 right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+            </button>
         </div>
 
-      </div>
     </div>
-  );
 
-  // Helper Component for Bottom Nav
-  function NavBtn({ icon, label, active, onClick, disabled, badge }) {
-    return (
-      <button 
-        onClick={onClick} 
-        disabled={disabled}
-        className={`flex flex-col items-center p-2 relative ${active ? 'text-blue-600' : 'text-gray-400'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        <div className="mb-1">{icon}</div>
-        <span className="text-[10px] font-semibold">{label}</span>
-        {badge && (
-          <span className="absolute top-0 right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
-            {badge}
-          </span>
-        )}
-      </button>
-    );
-  }
-}
+    <!-- Backend / Logic Script -->
+    <script>
+        // State Variables
+        let currentTab = 'campaign';
+        let contactList = [];
+        let isDialing = false;
+        let currentIndex = 0;
+        let interestedLeads = [];
+        let timerRef = null;
+
+        // Update Clock
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
+
+        // Tab Switching Logic
+        function switchTab(tabName) {
+            if (isDialing && tabName !== 'live') {
+                alert("Campaign chal raha hai. Kripya pehle usey stop karein.");
+                return;
+            }
+
+            currentTab = tabName;
+            
+            // Hide all tabs
+            document.getElementById('tab-campaign').style.display = 'none';
+            document.getElementById('tab-live').style.display = 'none';
+            document.getElementById('tab-leads').style.display = 'none';
+            
+            // Reset Nav Colors
+            document.getElementById('nav-campaign').className = "flex flex-col items-center p-2 text-gray-400 transition-colors";
+            document.getElementById('nav-live').className = "flex flex-col items-center p-2 text-gray-400 transition-colors";
+            document.getElementById('nav-leads').className = "flex flex-col items-center p-2 text-gray-400 relative transition-colors";
+
+            // Show active tab
+            if(tabName === 'campaign') {
+                document.getElementById('tab-campaign').style.display = 'block';
+                document.getElementById('nav-campaign').classList.replace('text-gray-400', 'text-blue-600');
+            } else if (tabName === 'live') {
+                document.getElementById('tab-live').style.display = 'flex';
+                document.getElementById('nav-live').classList.replace('text-gray-400', 'text-blue-600');
+            } else if (tabName === 'leads') {
+                document.getElementById('tab-leads').style.display = 'flex';
+                document.getElementById('nav-leads').classList.replace('text-gray-400', 'text-blue-600');
+                renderLeads();
+            }
+        }
+
+        // Start Campaign Logic
+        function startCampaign() {
+            const rawText = document.getElementById('contactInput').value;
+            contactList = rawText.split('\n').map(n => n.trim()).filter(n => n.length > 5);
+            
+            if (contactList.length === 0) {
+                alert("Pehle contact numbers dalein!");
+                return;
+            }
+
+            currentIndex = 0;
+            isDialing = true;
+            
+            // UI Updates for Live Mode
+            switchTab('live');
+            document.getElementById('stop-btn').classList.remove('hidden');
+            document.getElementById('back-setup-btn').classList.add('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            
+            runCallCycle();
+        }
+
+        // Stop Campaign Logic
+        function stopCampaign() {
+            isDialing = false;
+            clearTimeout(timerRef);
+            updateStatusUI("Campaign Stopped", "bg-gray-100", "text-gray-600");
+            document.getElementById('dialing-ring').className = "absolute inset-0 bg-gray-100 rounded-full";
+            document.getElementById('phone-icon').classList.remove('fa-shake');
+            
+            document.getElementById('stop-btn').classList.add('hidden');
+            document.getElementById('back-setup-btn').classList.remove('hidden');
+            document.getElementById('current-number-display').innerText = "Campaign Paused/Finished";
+        }
+
+        // Main Call Loop Logic (Mock Backend)
+        function runCallCycle() {
+            if (currentIndex >= contactList.length || !isDialing) {
+                stopCampaign();
+                updateStatusUI("Sabhi calls poore ho gaye!", "bg-green-100", "text-green-700");
+                return;
+            }
+
+            const currentNumber = contactList[currentIndex];
+            
+            // Update Progress Bar
+            const progressPercent = (currentIndex / contactList.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            document.getElementById('progress-text').innerText = `${currentIndex} / ${contactList.length} Calls`;
+            
+            document.getElementById('current-number-display').innerText = currentNumber;
+            
+            // Step 1: Calling...
+            updateStatusUI(`Calling ${currentNumber}...`, "bg-blue-50", "text-blue-600");
+            document.getElementById('dialing-ring').className = "absolute inset-0 bg-blue-100 rounded-full dialing-animation opacity-70";
+            document.getElementById('phone-icon').classList.add('fa-shake');
+
+            timerRef = setTimeout(() => {
+                if (!isDialing) return;
+                
+                // Step 2: Playing Script...
+                updateStatusUI("Playing Script (30 sec)...", "bg-blue-100", "text-blue-700");
+                
+                timerRef = setTimeout(() => {
+                    if (!isDialing) return;
+                    
+                    // Step 3: Waiting for 1...
+                    updateStatusUI("Waiting for input (1)...", "bg-yellow-100", "text-yellow-700");
+                    
+                    timerRef = setTimeout(() => {
+                        if (!isDialing) return;
+                        
+                        // Random Simulation: 30% chance user presses 1
+                        const pressedOne = Math.random() > 0.7;
+                        
+                        if (pressedOne) {
+                            updateStatusUI("User ne 1 dabaya! Data saved.", "bg-green-100", "text-green-700");
+                            const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                            interestedLeads.push({ phone: currentNumber, time: now });
+                            updateBadge();
+                        } else {
+                            updateStatusUI("No input. Call cut.", "bg-red-100", "text-red-700");
+                        }
+                        
+                        // Go to next number
+                        timerRef = setTimeout(() => {
+                            if (!isDialing) return;
+                            currentIndex++;
+                            runCallCycle();
+                        }, 2000);
+
+                    }, 2000); // Wait 2s for input
+                }, 3000); // Play script for 3s (simulated)
+            }, 2000); // Ring for 2s
+        }
+
+        // Helper to update status badge
+        function updateStatusUI(text, bgClass, textClass) {
+            const badge = document.getElementById('call-status-badge');
+            badge.innerText = text;
+            badge.className = `text-sm font-medium px-4 py-2 rounded-full transition-colors duration-300 ${bgClass} ${textClass}`;
+        }
+
+        // Helper to update leads badge notification
+        function updateBadge() {
+            const badge = document.getElementById('nav-lead-badge');
+            if (interestedLeads.length > 0) {
+                badge.innerText = interestedLeads.length;
+                badge.classList.remove('hidden');
+            }
+        }
+
+        // Render Leads Tab Data
+        function renderLeads() {
+            document.getElementById('lead-count-badge').innerText = `${interestedLeads.length} Total`;
+            
+            if (interestedLeads.length === 0) {
+                document.getElementById('empty-leads').classList.remove('hidden');
+                document.getElementById('leads-list').classList.add('hidden');
+                document.getElementById('export-btn').classList.add('hidden');
+            } else {
+                document.getElementById('empty-leads').classList.add('hidden');
+                const listContainer = document.getElementById('leads-list');
+                listContainer.classList.remove('hidden');
+                document.getElementById('export-btn').classList.remove('hidden');
+                
+                listContainer.innerHTML = ''; // Clear old
+                
+                interestedLeads.forEach(lead => {
+                    const leadEl = document.createElement('div');
+                    leadEl.className = "bg-white p-4 rounded-xl shadow-sm border border-green-100 flex justify-between items-center";
+                    leadEl.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-green-500 rounded-full p-2 w-8 h-8 flex items-center justify-center">
+                                <i class="fa-solid fa-check text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-800">${lead.phone}</p>
+                                <p class="text-xs text-gray-500">Pressed '1' at ${lead.time}</p>
+                            </div>
+                        </div>
+                        <button class="text-blue-600 hover:bg-blue-50 w-8 h-8 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-phone"></i>
+                        </button>
+                    `;
+                    listContainer.appendChild(leadEl);
+                });
+            }
+        }
+
+        // Initialize display
+        switchTab('campaign');
+    </script>
+</body>
+</html>
